@@ -357,7 +357,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		 attribute<float32> ep_opp   := eputil/oppervlakte[ep_idx_vbo] ;
 		 attribute<int32> vbo_opp   := selectforlab/oppervlakte ;
 		 attribute<DPoint> vbo_geo   := selectforlab/geometry;
-		 attribute<Classifications/Uitkomstcats> uitkomst :=  iif( IsNull(pcncmb),
+		 attribute<Classifications/Uitkomstcats> uitkomst :=  iif( IsNull(ep_idx_vbo),
 		       const(Classifications/Uitkomstcats/V/geen, .), 
 			   iif( klaslet <= "C" , const(Classifications/Uitkomstcats/V/OK, .),
 			      const(Classifications/Uitkomstcats/V/NOK, .) )) ;
