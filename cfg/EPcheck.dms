@@ -1,9 +1,7 @@
 //todo
 //cleanup
 
-// buurprovincies ??
-// oppervlak vs arbeidsplaatsen
-
+// lowercase uit delen match expressies halen
 
 
 container EPcheck
@@ -217,12 +215,12 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		 attribute<string> Pand_gebruiksoppervlakte_thermische_zone   := SourceData/epdata_c/Pand_gebruiksoppervlakte_thermische_zone ;
       } 
 	  
-	  unit<uint32> place := SourceData/gemfrompc4c
+	  unit<uint32> i_gemfrompc4_fss := SourceData/gemfrompc4c
 ,   StorageName = "%ProjDir%/data/gemfrompc4f.fss"
 {
 
-   attribute<string> Postcode4  := SourceData/gemfrompc4/Postcode4;
-   attribute<string> Gemeentenaam:= SourceData/gemfrompc4/Gemeentenaam;
+   attribute<string> Postcode4  := SourceData/gemfrompc4c/Postcode4;
+   attribute<string> Gemeentenaam:= SourceData/gemfrompc4c/Gemeentenaam;
 
 }
 	}
@@ -242,6 +240,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
                     attribute<Int32> oppervlakte   := SourceData/bag_snapshot_result/vbo/oppervlakte[Nr_OrgEntity];
                  }
 
+              
 		    unit<uint32> eputil := subset( 
 			           ( SourceData/epdata/Pand_gebouwklasse == "U"  ) )
                  {
@@ -255,8 +254,6 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		    attribute<UInt32> adres_idx_vbo (selectforlab ) := rlookup(selectforlab/nummeraanduiding_id,
   			      SourceData/bag_snapshot_result/adres/nummeraanduiding_id );
 				  
-//			attribute<string> ep_pcncmb  (SourceData/epdata) := ( SourceData/epdata/Pand_postcode + 
-//			 SourceData/epdata/Pand_huisnummer + uppercase(SourceData/epdata/Pand_huisletter) + SourceData/epdata/Pand_huisnummertoevoeging  );
 			attribute<string> adr_pcncmb  (SourceData/bag_snapshot_result/adres) := uppercase( SourceData/bag_snapshot_result/adres/postcode + 
 			 String(SourceData/bag_snapshot_result/adres/huisnummer) + uppercase(SourceData/bag_snapshot_result/adres/Huisletter) + "-" + lowercase(SourceData/bag_snapshot_result/adres/toevoeging)) ;
 			
@@ -273,6 +270,12 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			        attribute<string> ep_gemeente := rjoin(ep_pc4,
 			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
                  }		 
+
+
+            // eventueel restgroep matchen zonder toevoeging
+			
+			// aparte export WEL epo en adres , GEEN VBO record met U
+			// let op: dat kunnen ook adresen zijn met kleinere oppervlakten
 
             attribute<UInt32> ep_idx_vbo (selectforlab ) := rlookup(adres_idx_vbo,  adres_idx_ep );
 			attribute<string> select_klaslet (selectforlab ) := eputil/ep_klaslet [ep_idx_vbo];
