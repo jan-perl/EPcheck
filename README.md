@@ -18,9 +18,16 @@ i_gemfrompc4_fss
 
 om te runnen:
 klik op Results/koppel1
-op epnoaddr -> dan exporteer de data via het export menu in de gui
+op epnoaddr -> check of er struktuur zit in uitval op ep versus adressen
+nieuwe adresssen mogen hier
+
+op epnovbosel  -> check
+'geenNietWoon', -> adresssen met nieuwe functies
+'Industrie', (OK, geen plicht)
+'Klein', (OK, geen plicht)
+'Uitzoeken' -> nagaan of hier struktuur in zit
 
 wis output/outp2land.dbf als deze bestaat
-klik op i_land_dbf -> om dbf bij te werken
+klik op i_land_dbf -> om dbf bij te7 werken
 
 
