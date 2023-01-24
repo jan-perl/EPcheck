@@ -6,8 +6,10 @@ maak folder data, op zelfde niveau als cfg, ernaast
 maak folder output, op zelfde niveau als cfg, ernaast
 
 in folder data, installeer:
-- BAG download (link ! , eerst registrereren)
-- EP download (link !, eerst registrereren)
+- BAG download (link https://www.geoparaat.nl/bag/  , eerst registrereren)
+zip uitpakken naar data/bag_snapshot_20221001/snapshot_20221001.gpkg 
+- EP download (link https://www.rvo.nl/onderwerpen/wetten-en-regels-gebouwen/ep-online , eerst registrereren)
+zip uitpakken naar data/v20230101_v2_csv.csv
 - gemfrompc4.csv (uit intern tool, staat al in git )
 
 eenmalig: converteer csv data naar dbf fss formaat

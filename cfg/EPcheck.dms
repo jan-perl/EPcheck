@@ -214,13 +214,13 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
          attribute<string> Gemeentenaam:= SourceData/gemfrompc4c/Gemeentenaam;
       } 
 	  
-	  unit<uint32> i_epdat_dbf  := SourceData/epdata ,
+	  unit<uint32> i_epdat_dbf  := SourceData/epdata_c ,
                     StorageName = "%ProjDir%/data/epdata_d.dbf"        {
-         attribute<string> pcncmb  := SourceData/epdata/ep_pcncmb;
-		 attribute<string> klaslet   := SourceData/epdata/ep_klaslet ;
-         attribute<string> energiekl   := SourceData/epdata/Pand_energieklasse ;
-		 attribute<string> gebouwkl   := SourceData/epdata/Pand_gebouwklasse ;
-		 attribute<string> gebropp   := SourceData/epdata/Pand_gebruiksoppervlakte_thermische_zone ;
+         attribute<string> pcncmb  := SourceData/epdata_c/ep_pcncmb;
+		 attribute<string> klaslet   := SourceData/epdata_c/ep_klaslet ;
+         attribute<string> energiekl   := SourceData/epdata_c/Pand_energieklasse ;
+		 attribute<string> gebouwkl   := SourceData/epdata_c/Pand_gebouwklasse ;
+		 attribute<string> gebropp   := SourceData/epdata_c/Pand_gebruiksoppervlakte_thermische_zone ;
       } 
 	  
 	  	  unit<uint32> i_epdat_fss  := SourceData/epdata_c ,
