@@ -1,0 +1,10 @@
+*.zip
+*.shp
+*.dbf
+*.sbn
+*.cpg
+*.prj
+*.sbx
+*.shx
+data/*
+output/*
