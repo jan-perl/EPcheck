@@ -1,5 +1,13 @@
 # EPcheck
-Kijk eens of EPonline met BAG te combineren is
+
+
+Een open-source / open-data berekening van de label-C plicht bedrijven
+<https://www.nrc.nl/nieuws/2022/12/29/ruim-een-derde-kantoorpanden-riskeert-sluiting-om-energielabelplicht-a4152892#/krant/2022/12/30/>
+
+Dit tool kan gemeenten helpen in hun voorbereiding
+https://iplo.nl/thema/energiebesparing/energielabel-verplichting-kantoren/informatieblad-toezicht-handhaving-energielabel/voorbereiden-toezicht/
+
+Werkt door EPonline met BAG te combineren
 
 Installatie:
 maak folder data, op zelfde niveau als cfg, ernaast

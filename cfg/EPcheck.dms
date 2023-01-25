@@ -89,7 +89,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		
 		unit<uint32> Uitkomstcats : nrofrows = 3
 	{
-		attribute<string> name  : [ 'geen', 'OK', 'NOK' ];
+		attribute<string> name  : [ 'geen', 'NOK', 'OK' ];
 		attribute<string> label := name, DialogType = "LabelText";
 
         container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
@@ -247,11 +247,12 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
 		container koppel1
 		{
+		    parameter <int32> minopp := Int32( 100.0/2.1 );
 		  
 		    unit<uint32> selectforlab := subset( 
 			    ( SourceData/bag_snapshot_result/vbo/woon == False ) &&   
 			    ( SourceData/bag_snapshot_result/vbo/industrie == False ) &&
-				( SourceData/bag_snapshot_result/vbo/oppervlakte >=  Int32( 100 ) ) )
+				( SourceData/bag_snapshot_result/vbo/oppervlakte >=  minopp ) )
                  {
                     attribute<string> nummeraanduiding_id  := SourceData/bag_snapshot_result/vbo/nummeraanduiding_id[Nr_OrgEntity];
                     attribute<Int32> oppervlakte   := SourceData/bag_snapshot_result/vbo/oppervlakte[Nr_OrgEntity];
@@ -332,7 +333,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 					attribute<Classifications/UitkomstUitval> uitkomst :=  iif( IsNull(uvbo_idx),
 		       const(Classifications/UitkomstUitval/V/geenNietWoon, .), 
 			   iif( industrie , const(Classifications/UitkomstUitval/V/Industrie, .),
-			      iif( vbo_opp >=  Int32( 100 ) , const(Classifications/UitkomstUitval/V/Uitzoeken, .),
+			      iif( vbo_opp >=  minopp , const(Classifications/UitkomstUitval/V/Uitzoeken, .),
 			      const(Classifications/UitkomstUitval/V/Klein, .) ) )) ;
                  }	
 
@@ -348,22 +349,39 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			
 			// code maken dat oude dbf eerst gewist wordt
 
-	  unit<uint32> i_land_dbf  := selectforlab,
-                    StorageName = "%ProjDir%/output/outp2land.dbf"        {
+	  unit<uint32> i_land_dbf  := selectforlab
+	       ,    StorageName = "%ProjDir%/output/outp2land.dbf"       
+	    {
          attribute<string> pcncmb  :=select_ep_pcncmb;
 		 attribute<string> klaslet   := makedefined(select_klaslet," ") ;
          attribute<string> gemeente   := select_gemeente ;
 		 attribute<string> straat   := select_Straatnaam ;
 		 attribute<float32> ep_opp   := eputil/oppervlakte[ep_idx_vbo] ;
 		 attribute<int32> vbo_opp   := selectforlab/oppervlakte ;
-		 attribute<DPoint> vbo_geo   := selectforlab/geometry;
+		 attribute<DPoint> geometry   := selectforlab/geometry;
 		 attribute<Classifications/Uitkomstcats> uitkomst :=  iif( IsNull(ep_idx_vbo),
 		       const(Classifications/Uitkomstcats/V/geen, .), 
 			   iif( klaslet <= "C" , const(Classifications/Uitkomstcats/V/OK, .),
 			      const(Classifications/Uitkomstcats/V/NOK, .) )) ;
-      } 
+        } 
 
-
+			unit<uint32> pergemeentecat := unique(i_land_dbf/gemeente)
+// mag kennelijk niet:				       ,    StorageName = "%ProjDir%/output/pergemeente.dbf"   
+			{
+			    attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/gemeente, pergemeentecat/Values);
+// deze functie klopt niet:				attribute<DPoint> geometry  := sum(selectforlab/geometry,gem_rel) ;
+				attribute<int32>   oppervlakte  (pergemeentecat)  := sum(i_land_dbf/vbo_opp,gem_rel) ;
+				attribute<uint32>   aantal  (pergemeentecat)  := count(i_land_dbf/vbo_opp,gem_rel) ;
+				unit<uint32> dlopp1 := classifications/Uitkomstcats {
+				     attribute<int32>   oppdl (pergemeentecat)  := sum(
+					  iif(i_land_dbf/uitkomst == 1 , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ;
+				}
+				
+                container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
+				'float32( sum( iif(i_land_dbf/uitkomst == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte) '
+				, pergemeentecat , float32);
+                			
+            }
 
      }
         
