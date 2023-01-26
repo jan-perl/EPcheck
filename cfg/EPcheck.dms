@@ -91,6 +91,10 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	{
 		attribute<string> name  : [ 'geen', 'NOK', 'OK' ];
 		attribute<string> label := name, DialogType = "LabelText";
+		attribute<uint32> BrushColor: DialogType = "BrushColor",
+			[
+				 rgb(255,0,0),rgb(0,0,255),rgb(0,255,0)
+		    ];
 
         container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 	}
@@ -326,9 +330,12 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
 				    attribute<UInt32> uvbo_idx := adres_idx_uvbo[adres_idx_ep [Nr_OrgEntity]];
 					attribute<int32> vbo_opp   := uitvalvbosel/oppervlakte [uvbo_idx];
-					attribute<DPoint> geometry  := iif( IsNull(uvbo_idx) ,					     
+					// storing geometry does not work
+					// parameter <bool> alwaysadr := True , DisableStorage ="True" ;
+					attribute<DPoint> geometry  := iif( IsNull(uvbo_idx) || True  ,					     
 						  SourceData/bag_snapshot_result/adres/geometry [adres_idx_ep [Nr_OrgEntity]] ,
-						  uitvalvbosel/geometry	[uvbo_idx]);
+						  uitvalvbosel/geometry	[uvbo_idx])   ;
+
 					attribute<bool> industrie   := uitvalvbosel/industrie [uvbo_idx];
 					attribute<Classifications/UitkomstUitval> uitkomst :=  iif( IsNull(uvbo_idx),
 		       const(Classifications/UitkomstUitval/V/geenNietWoon, .), 
@@ -358,33 +365,63 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		 attribute<string> straat   := select_Straatnaam ;
 		 attribute<float32> ep_opp   := eputil/oppervlakte[ep_idx_vbo] ;
 		 attribute<int32> vbo_opp   := selectforlab/oppervlakte ;
-		 attribute<DPoint> geometry   := selectforlab/geometry;
+// storing geometry does not work		 , DisableStorage ="True" 
+		 attribute<DPoint> vbo_geometry   := selectforlab/geometry, DisableStorage ="True"  ;
+		 attribute<DPoint> geometry   := SourceData/bag_snapshot_result/adres/geometry[adres_idx_vbo], DisableStorage ="True"  ;
 		 attribute<Classifications/Uitkomstcats> uitkomst :=  iif( IsNull(ep_idx_vbo),
 		       const(Classifications/Uitkomstcats/V/geen, .), 
 			   iif( klaslet <= "C" , const(Classifications/Uitkomstcats/V/OK, .),
 			      const(Classifications/Uitkomstcats/V/NOK, .) )) ;
         } 
 
-			unit<uint32> pergemeentecat := unique(i_land_dbf/gemeente)
-// mag kennelijk niet:				       ,    StorageName = "%ProjDir%/output/pergemeente.dbf"   
-			{
-			    attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/gemeente, pergemeentecat/Values);
-// deze functie klopt niet:				attribute<DPoint> geometry  := sum(selectforlab/geometry,gem_rel) ;
-				attribute<int32>   oppervlakte  (pergemeentecat)  := sum(i_land_dbf/vbo_opp,gem_rel) ;
-				attribute<uint32>   aantal  (pergemeentecat)  := count(i_land_dbf/vbo_opp,gem_rel) ;
+			unit<uint32> pergemeentecatd := unique(i_land_dbf/gemeente)
+// 	               ,    StorageName = "%ProjDir%/output/pergemeented.dbf"  
+            {
+                  attribute<string>   gemeentenaamd  (pergemeentecatd)  := string( Values);	  
+			}
+			
+			    attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/gemeente, pergemeentecatd/Values) ;
+// functie lijkt niet te werken als verwacht
+            
+			
+	     unit<uint32>  pergemeentecat := pergemeentecatd
+	     ,    StorageName = "%ProjDir%/output/pergemeente.dbf"  
+          {		 		  
+				attribute<int32>   oppervlakte  (pergemeentecatd)  := sum(i_land_dbf/vbo_opp,gem_rel) ;
+				attribute<string>    gemeentenaam  (pergemeentecatd)  := first(i_land_dbf/gemeente,gem_rel) ;
+				//attribute<uint32>   aantal  (pergemeentecatd)  := count(i_land_dbf/vbo_opp,em_rel) ;
+				//attribute<int32>   avg  (pergemeentecatd)  := mean(i_land_dbf/vbo_opp,gem_rel) ;
 				unit<uint32> dlopp1 := classifications/Uitkomstcats {
-				     attribute<int32>   oppdl (pergemeentecat)  := sum(
+				     attribute<int32>   oppdl (pergemeentecatd)  := sum(
 					  iif(i_land_dbf/uitkomst == 1 , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ;
 				}
 				
                 container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
 				'float32( sum( iif(i_land_dbf/uitkomst == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte) '
 				, pergemeentecat , float32);
-                			
+                attribute<float32>   R_geen  (pergemeentecatd)  :=  dlopppct/geen;
+				attribute<float32>   R_NOK  (pergemeentecatd)  :=  dlopppct/NOK;
+				attribute<float32>   R_OK  (pergemeentecatd)  :=  dlopppct/OK;     
+             // incorrecte naam ?   				
+  			     attribute<DPoint> geometry (pergemeentecatd) := add_list(i_land_dbf/geometry,gem_rel) , DisableStorage ="True"  ;
+            }
+
+
+//poging als voor andere opslag
+	     unit<uint32>  pergemeentecat2 := pergemeentecat
+	     ,    StorageName = "%ProjDir%/output/pergemeente2.dbf"   
+			{
+				attribute<string>    gemeentenaam  (pergemeentecat)  := ""+ pergemeentecat/ Values;
+				attribute<int32>     oppervlakte  (pergemeentecat)  := 0+pergemeentecat/ oppervlakte ;	
+                attribute<float32>   R_geen  (pergemeentecat)  := 0.0+pergemeentecat/ dlopppct/geen;
+				attribute<float32>   R_NOK  (pergemeentecat)  := 0.0+pergemeentecat/ dlopppct/NOK;
+				attribute<float32>   R_OK  (pergemeentecat)  := 0.0+pergemeentecat/ dlopppct/OK;
             }
 
      }
-        
+ 
+
+
 		
 
 		
