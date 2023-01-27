@@ -3,7 +3,6 @@
 
 // lowercase uit delen match expressies halen
 
-
 container EPcheck
 {
 
@@ -92,9 +91,13 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		attribute<string> name  : [ 'geen', 'NOK', 'OK' ];
 		attribute<string> label := name, DialogType = "LabelText";
 		attribute<uint32> BrushColor: DialogType = "BrushColor",
-			[
-				 rgb(255,0,0),rgb(0,0,255),rgb(0,255,0)
-		    ];
+			[				 rgb(255,0,0),rgb(0,0,255),rgb(0,255,0) 		    ];
+        attribute<uint32>  SymbolColor :=  DialogType = "SymbolColor",
+		    [				 rgb(255,0,0),rgb(0,0,255),rgb(0,255,0) 		    ];
+        attribute<float32> SymbolSize  := DialogType = "SymbolSize", [ 4.0,4.0,4.0]     ;
+        attribute<uint32>  Color :=  DialogType = "BrushColor",
+		    [				 rgb(255,255,0),rgb(0,0,255),rgb(0,255,0),rgb(255,0,0) 		   ];
+
 
         container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 	}
@@ -103,7 +106,15 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	{
 		attribute<string> name  : [ 'geenNietWoon', 'Industrie', 'Klein', 'Uitzoeken' ];
 		attribute<string> label := name, DialogType = "LabelText";
-
+		attribute<uint32> BrushColor: DialogType = "BrushColor",
+			[				 rgb(255,255,0),rgb(0,0,255),rgb(0,255,0),rgb(255,0,0) 		   ];
+        attribute<uint32>  SymbolColor :=  DialogType = "SymbolColor",
+		    [				 rgb(255,255,0),rgb(0,0,255),rgb(0,255,0),rgb(255,0,0) 		   ];
+        attribute<float32> SymbolSize  := DialogType = "SymbolSize",  [ 4.0,4.0,4.0,4.0]     ;
+        attribute<uint32>  Color :=  DialogType = "BrushColor",
+		    [				 rgb(255,255,0),rgb(0,0,255),rgb(0,255,0),rgb(255,0,0) 		   ];
+		
+		
         container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 	}
 		
@@ -151,15 +162,15 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 , StorageType     = "gdal.vect"
 , StorageReadOnly = "True"
 , SyncMode        = "allTables"
-, DialogData      = "geography/point_rd";
+, DialogData      = "geography/rdc";
 
     unit<uint32> epdata_c
 :  StorageName     = "%ProjDir%/data/v20230101_v2_csv.csv"
 ,  StorageType     = "gdal.vect"
 ,  SyncMode        = "allTables"
 ,  StorageReadOnly = "True" {
-    	   attribute<string> ep_pcncmb   := ( Pand_postcode + 
-			     Pand_huisnummer + uppercase(Pand_huisletter) +"-" + lowercase(Pand_huisnummertoevoeging)  );
+    	   attribute<string> ep_pcncmb   := uppercase( Pand_postcode + 
+			     Pand_huisnummer + Pand_huisletter +"-" + Pand_huisnummertoevoeging  );
 			 attribute<string> ep_klaslet   := substr( Pand_energieklasse,0,1 );
         }
 
@@ -260,7 +271,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
                  {
                     attribute<string> nummeraanduiding_id  := SourceData/bag_snapshot_result/vbo/nummeraanduiding_id[Nr_OrgEntity];
                     attribute<Int32> oppervlakte   := SourceData/bag_snapshot_result/vbo/oppervlakte[Nr_OrgEntity];
-					attribute<DPoint> geometry   := SourceData/bag_snapshot_result/vbo/geometry[Nr_OrgEntity];
+					attribute<Geography/rdc> geometry   := SourceData/bag_snapshot_result/vbo/geometry[Nr_OrgEntity];
                  }
 
               
@@ -278,7 +289,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
   			      SourceData/bag_snapshot_result/adres/nummeraanduiding_id );
 				  
 			attribute<string> adr_pcncmb  (SourceData/bag_snapshot_result/adres) := uppercase( SourceData/bag_snapshot_result/adres/postcode + 
-			 String(SourceData/bag_snapshot_result/adres/huisnummer) + uppercase(SourceData/bag_snapshot_result/adres/Huisletter) + "-" + lowercase(SourceData/bag_snapshot_result/adres/toevoeging)) ;
+			 String(SourceData/bag_snapshot_result/adres/huisnummer) + SourceData/bag_snapshot_result/adres/Huisletter + "-" + SourceData/bag_snapshot_result/adres/toevoeging) ;
 			
 		    attribute<UInt32> adres_idx_ep (eputil) :=  rlookup(eputil/ep_pcncmb,  adr_pcncmb );		  
 		  
@@ -310,7 +321,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
                     attribute<string> nummeraanduiding_id  := SourceData/bag_snapshot_result/vbo/nummeraanduiding_id[Nr_OrgEntity];
                     attribute<Int32> oppervlakte   := SourceData/bag_snapshot_result/vbo/oppervlakte[Nr_OrgEntity];
 					attribute<bool> industrie  := SourceData/bag_snapshot_result/vbo/industrie[Nr_OrgEntity];
-					attribute<DPoint> geometry   := SourceData/bag_snapshot_result/vbo/geometry[Nr_OrgEntity];
+					attribute<Geography/rdc> geometry   := SourceData/bag_snapshot_result/vbo/geometry[Nr_OrgEntity];
                  }
 				  attribute<UInt32> adres_idx_uvbo (SourceData/bag_snapshot_result/adres ) := rlookup(
   			      SourceData/bag_snapshot_result/adres/nummeraanduiding_id ,
@@ -330,9 +341,8 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
 				    attribute<UInt32> uvbo_idx := adres_idx_uvbo[adres_idx_ep [Nr_OrgEntity]];
 					attribute<int32> vbo_opp   := uitvalvbosel/oppervlakte [uvbo_idx];
-					// storing geometry does not work
-					// parameter <bool> alwaysadr := True , DisableStorage ="True" ;
-					attribute<DPoint> geometry  := iif( IsNull(uvbo_idx) || True  ,					     
+
+					attribute<Geography/rdc> geometry  :=  iif( IsNull(uvbo_idx) || True  ,					     
 						  SourceData/bag_snapshot_result/adres/geometry [adres_idx_ep [Nr_OrgEntity]] ,
 						  uitvalvbosel/geometry	[uvbo_idx])   ;
 
@@ -366,8 +376,8 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		 attribute<float32> ep_opp   := eputil/oppervlakte[ep_idx_vbo] ;
 		 attribute<int32> vbo_opp   := selectforlab/oppervlakte ;
 // storing geometry does not work		 , DisableStorage ="True" 
-		 attribute<DPoint> vbo_geometry   := selectforlab/geometry, DisableStorage ="True"  ;
-		 attribute<DPoint> geometry   := SourceData/bag_snapshot_result/adres/geometry[adres_idx_vbo], DisableStorage ="True"  ;
+		 attribute<Geography/rdc> vbo_geometry   := selectforlab/geometry, DisableStorage ="True"  ;
+		 attribute<Geography/rdc> geometry   := SourceData/bag_snapshot_result/adres/geometry[adres_idx_vbo], DisableStorage ="True"  ;
 		 attribute<Classifications/Uitkomstcats> uitkomst :=  iif( IsNull(ep_idx_vbo),
 		       const(Classifications/Uitkomstcats/V/geen, .), 
 			   iif( klaslet <= "C" , const(Classifications/Uitkomstcats/V/OK, .),
