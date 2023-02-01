@@ -1,6 +1,6 @@
 //todo
 //cleanup
-
+// beveiliging op isna bij oppervlakken om groot-negatieve waarden te voorkomen
 
 container EPcheck
 {
@@ -300,6 +300,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 					attribute<Int32> oppervlakte  := Int32(round(eputil/oppervlakte [Nr_OrgEntity]));
 			        attribute<string> ep_gemeente := rjoin(ep_pc4,
 			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
+				    attribute<string> ep_straat :=  SourceData/bag_snapshot_result/adres/Straatnaam [adres_idx_ep [Nr_OrgEntity]];
 					attribute<Geography/rdc> geometry  := SourceData/bag_snapshot_result/adres/geometry [adres_idx_epnr ] ;	 
 					attribute<Classifications/UitkomstCats> uitkomst :=   const(Classifications/UitkomstCats/V/geenadr, .);				
                  }		 
@@ -338,6 +339,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			        attribute<string> ep_gemeente := rjoin(ep_pc4,
 			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
 				    attribute<UInt32> uvbo_idx := adres_idx_uvbo[adres_idx_ep [Nr_OrgEntity]];
+					attribute<string> ep_straat :=  SourceData/bag_snapshot_result/adres/Straatnaam [adres_idx_ep [Nr_OrgEntity]];
 					attribute<int32> vbo_opp   := uitvalvbosel/oppervlakte [uvbo_idx];
 
 					attribute<Geography/rdc> geometry  :=  iif( IsNull(uvbo_idx) || True  ,					     
@@ -389,6 +391,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
       {
              attribute<string> pcncmb := union_data(., i_land_dbf/pcncmb,epnovbosel/ep_pcncmb_res,epnoaddr/ep_pcncmb_res );
 			 attribute<string> gemeente := union_data(., i_land_dbf/gemeente,epnovbosel/ep_gemeente,epnoaddr/ep_gemeente );
+			 attribute<string> straat := union_data(., i_land_dbf/straat,epnovbosel/ep_straat,epnoaddr/ep_straat );
 			 attribute<string> klaslet := union_data(., i_land_dbf/klaslet,epnovbosel/klaslet,epnoaddr/klaslet );
 			 attribute<Int32> vbo_opp := union_data(., i_land_dbf/vbo_opp,epnovbosel/vbo_opp,epnoaddr/oppervlakte );
 			 attribute<Classifications/Uitkomstcats> uitkomst := union_data(., i_land_dbf/uitkomst,epnovbosel/uitkomst,epnoaddr/uitkomst );
