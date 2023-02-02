@@ -89,6 +89,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	{
 		attribute<string> name  : [ 'geen', 'NOK', 'OK', 'geenNietWoon', 'Industrie', 'Klein', 'Uitzoeken','geenadr' ];
 		attribute<string> label := name, DialogType = "LabelText";
+
 		attribute<uint32> BrushColor: DialogType = "BrushColor",
 			[				 rgb(128,0,0),rgb(0,0,128),rgb(0,128,0) ,rgb(0,128,128),rgb(0,128,128),rgb(128,128,128),rgb(255,255,0) ,rgb(128,128,0)			    ];
         attribute<uint32>  SymbolColor :=  DialogType = "SymbolColor",
@@ -300,8 +301,9 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 					attribute<Int32> oppervlakte  := Int32(round(eputil/oppervlakte [Nr_OrgEntity]));
 			        attribute<string> ep_gemeente := rjoin(ep_pc4,
 			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
-				    attribute<string> ep_straat :=  SourceData/bag_snapshot_result/adres/Straatnaam [adres_idx_ep [Nr_OrgEntity]];
-					attribute<Geography/rdc> geometry  := SourceData/bag_snapshot_result/adres/geometry [adres_idx_epnr ] ;	 
+				    attribute<string> ep_straat :=  iif( IsNull(adres_idx_epnr ),"",  
+					         SourceData/bag_snapshot_result/adres/Straatnaam [adres_idx_epnr] );		
+				     attribute<Geography/rdc> geometry  := SourceData/bag_snapshot_result/adres/geometry [adres_idx_epnr ] ;	 
 					attribute<Classifications/UitkomstCats> uitkomst :=   const(Classifications/UitkomstCats/V/geenadr, .);				
                  }		 
 
@@ -338,12 +340,16 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 					attribute<string> ep_pc4  := substr(ep_pcncmb_res,0,4);
 			        attribute<string> ep_gemeente := rjoin(ep_pc4,
 			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
-				    attribute<UInt32> uvbo_idx := adres_idx_uvbo[adres_idx_ep [Nr_OrgEntity]];
-					attribute<string> ep_straat :=  SourceData/bag_snapshot_result/adres/Straatnaam [adres_idx_ep [Nr_OrgEntity]];
-					attribute<int32> vbo_opp   := uitvalvbosel/oppervlakte [uvbo_idx];
+				    attribute<UInt32> bag_adres_idx := adres_idx_ep [Nr_OrgEntity];
+				    attribute<UInt32> uvbo_idx := adres_idx_uvbo[bag_adres_idx];
+					attribute<string> ep_straat :=  
+					         iif( IsNull(bag_adres_idx) ,"", SourceData/bag_snapshot_result/adres/Straatnaam [bag_adres_idx]);
+					attribute<int32> vbo_opp   := iif( IsNull(uvbo_idx) ,Int32(ep_opp),
+					    uitvalvbosel/oppervlakte [uvbo_idx] );
 
-					attribute<Geography/rdc> geometry  :=  iif( IsNull(uvbo_idx) || True  ,					     
-						  SourceData/bag_snapshot_result/adres/geometry [adres_idx_ep [Nr_OrgEntity]] ,
+					attribute<Geography/rdc> geometry  :=  iif( IsNull(uvbo_idx) || True  ,	
+                          				
+						     SourceData/bag_snapshot_result/adres/geometry [bag_adres_idx]  ,
 						  uitvalvbosel/geometry	[uvbo_idx])   ;
 
 					attribute<bool> industrie   := uitvalvbosel/industrie [uvbo_idx];
@@ -394,7 +400,10 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			 attribute<string> straat := union_data(., i_land_dbf/straat,epnovbosel/ep_straat,epnoaddr/ep_straat );
 			 attribute<string> klaslet := union_data(., i_land_dbf/klaslet,epnovbosel/klaslet,epnoaddr/klaslet );
 			 attribute<Int32> vbo_opp := union_data(., i_land_dbf/vbo_opp,epnovbosel/vbo_opp,epnoaddr/oppervlakte );
-			 attribute<Classifications/Uitkomstcats> uitkomst := union_data(., i_land_dbf/uitkomst,epnovbosel/uitkomst,epnoaddr/uitkomst );
+			 attribute<Classifications/Uitkomstcats> uitkomst := union_data(., i_land_dbf/uitkomst,epnovbosel/uitkomst,epnoaddr/uitkomst ) ;
+			 
+			        // how to set: PaletteDomain/SymbolColor = Uitkomstcats/SymbolColor;
+			   
 			 attribute<Geography/rdc> geometry :=union_data(., i_land_dbf/geometry,epnovbosel/geometry,epnoaddr/geometry );
       }
 
