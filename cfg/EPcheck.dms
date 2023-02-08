@@ -401,8 +401,9 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
         } 
 
 	  unit<uint32> outgeodbf  := union_unit(i_land_dbf,epnovbosel,epnoaddr  )
-	       ,    StorageName = "%ProjDir%/output/outp2geo.shp"  
-           ,    StorageType = "gdalwrite.vect"		   
+//	       ,    StorageName = "%ProjDir%/output/outp2geo.shp"  
+//           ,    StorageType = "gdalwrite.vect"	
+	       ,    StorageName = "%ProjDir%/output/outp2geo.dbf"  	   
       {
              attribute<string> pcncmb := union_data(., i_land_dbf/pcncmb,epnovbosel/ep_pcncmb_res,epnoaddr/ep_pcncmb_res );
 			 attribute<string> gemeente := union_data(., i_land_dbf/gemeente,epnovbosel/ep_gemeente,epnoaddr/ep_gemeente );
@@ -411,37 +412,40 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			 attribute<Int32> vbo_opp := union_data(., i_land_dbf/vbo_opp,epnovbosel/vbo_opp,epnoaddr/oppervlakte );
 			 attribute<Classifications/Uitkomstcats> uitkomst := union_data(., i_land_dbf/uitkomst,epnovbosel/uitkomst,epnoaddr/uitkomst ) ;
 			 
-			        // how to set: PaletteDomain/SymbolColor = Uitkomstcats/SymbolColor;
+			        // write gda1write geeft niet alle data velden, shp onder dbf geen geo data
 			   
-			 attribute<Geography/rdc> geometry :=union_data(., i_land_dbf/geometry,epnovbosel/geometry,epnoaddr/geometry );
+			 attribute<Geography/rdc> geometry :=union_data(., i_land_dbf/geometry,epnovbosel/geometry,epnoaddr/geometry )
+			 ,    StorageName = "%ProjDir%/output/outp2geo.shp";
 		         
       }
 			attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/gemeente, pergemeentecatd/Values) ;
 
+            container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
+				'float32( sum( iif(uint32(i_land_dbf/uitkomst) == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(pergemeentecatd/oppervlakte) '
+				, pergemeentecatd , float32), DisableStorage ="True" ;
+
 			unit<uint32> pergemeentecatd := unique(i_land_dbf/gemeente)
-// 	               ,    StorageName = "%ProjDir%/output/pergemeented.dbf"  
+ 	               ,    StorageName = "%ProjDir%/output/pergemeented.dbf"  
             {
                 attribute<string>     gemeentenaamd   := string( Values);	  
 				attribute<int32>      oppervlakte   := sum(i_land_dbf/vbo_opp,gem_rel) ;
 				attribute<string>     gemeentenaam   := first(i_land_dbf/gemeente,gem_rel) ;
 				//attribute<uint32>   aantal  := count(i_land_dbf/vbo_opp,em_rel) ;
 				//attribute<int32>    avg   := mean(i_land_dbf/vbo_opp,gem_rel) ;
-				unit<uint32> dlopp1 := classifications/Uitkomstcats {
-				     attribute<uint8>   oppdl (pergemeentecatd)  := sum(
-					  iif(i_land_dbf/uitkomst == uint8(1) , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ;
-				}
+				//unit<uint32> dlopp1 := classifications/Uitkomstcats {
+				//     attribute<uint8>   oppdl (pergemeentecatd)  := sum(
+				//	  iif(i_land_dbf/uitkomst == uint8(1) , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ;
+				//}
 				
-                container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
-				'float32( sum( iif(uint32(i_land_dbf/uitkomst) == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte) '
-				, pergemeentecatd , float32);
                 attribute<float32>   R_geen    :=  dlopppct/geen;
 				attribute<float32>   R_NOK    :=  dlopppct/NOK;
-				attribute<float32>   R_OK    :=  dlopppct/OK;    
-				attribute<float32>   D_geen    :=  float32( sum( iif(uint32(i_land_dbf/uitkomst) == 
-				           uint32(const(Classifications/Uitkomstcats/V/geen, .))  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
-				attribute<float32>   D_NOK    :=  float32( sum( iif(i_land_dbf/uitkomst == 
-				           const(Classifications/Uitkomstcats/V/NOK, .)  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
-				attribute<float32>   D_OK    :=  dlopppct/OK;   				
+				attribute<float32>   R_OK    :=  dlopppct/OK;   
+				attribute<float32>   R_uitzoek    :=  dlopppct/Uitzoeken + dlopppct/geenadr;    				
+				//attribute<float32>   D_geen    :=  float32( sum( iif(uint32(i_land_dbf/uitkomst) == 
+				//           uint32(const(Classifications/Uitkomstcats/V/geen, .))  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
+				//attribute<float32>   D_NOK    :=  float32( sum( iif(i_land_dbf/uitkomst == 
+				//           const(Classifications/Uitkomstcats/V/NOK, .)  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
+				//attribute<float32>   D_OK    :=  dlopppct/OK;   				
              // incorrecte naam ?   				
 			 // importeren CBS gemeentekaarten ? -> voorbeeldje in wiki ??
   			 //    attribute<DPoint> geometry (pergemeentecatd) := add_list(i_land_dbf/geometry,gem_rel) , DisableStorage ="True"  ;
