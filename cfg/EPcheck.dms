@@ -85,18 +85,16 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			attribute<uint32> BrushColor:  [rgb(0,255,0),rgb(0,0,255),rgb(255,0,0)], DialogType = "BrushColor"; // Use colors: Green, Blue, Red
 		}
 		
-		unit<uint32> Uitkomstcats : nrofrows = 8
+		unit<uint8> Uitkomstcats : nrofrows = 8
 	{
 		attribute<string> name  : [ 'geen', 'NOK', 'OK', 'geenNietWoon', 'Industrie', 'Klein', 'Uitzoeken','geenadr' ];
 		attribute<string> label := name, DialogType = "LabelText";
 
-		attribute<uint32> BrushColor: DialogType = "BrushColor",
-			[				 rgb(128,0,0),rgb(0,0,128),rgb(0,128,0) ,rgb(0,128,128),rgb(0,128,128),rgb(128,128,128),rgb(255,255,0) ,rgb(128,128,0)			    ];
         attribute<uint32>  SymbolColor :=  DialogType = "SymbolColor",
-		    [				rgb(128,0,0),rgb(0,0,128),rgb(0,128,0) ,rgb(0,128,128),rgb(0,128,128),rgb(128,128,128),rgb(255,255,0) ,rgb(128,128,0)    ];
+		    [				rgb(255,0,0),rgb(0,0,255),rgb(0,255,0) ,rgb(255,0,255),rgb(0,255,255),rgb(128,128,128) ,rgb(128,128,0) ,rgb(255,255,0)   ];
+		attribute<uint32> BrushColor := SymbolColor, DialogType = "BrushColor";			
         attribute<float32> SymbolSize  := DialogType = "SymbolSize", [ 4.0,4.0,4.0, 4.0,4.0,4.0,4.0, 4.0]     ;
-        attribute<uint32>  Color :=  DialogType = "BrushColor",
-		    [				 rgb(128,0,0),rgb(0,0,128),rgb(0,128,0) ,rgb(0,128,128),rgb(0,128,128),rgb(128,128,128),rgb(255,255,0) ,rgb(128,128,0)		   ];
+        attribute<uint32>  Color := SymbolColor, DialogType = "BrushColor";
 
 
         container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
@@ -137,6 +135,15 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		unit<fpoint> rdc      := Geography/rdc_meter;
 
 		#include<ngr_layer.dms>                                                                // Tiles for background layer
+	}
+
+    container ColorExamples: Using = "Units" 
+	{
+	    unit<uint32> testgeo := range(uint32, 0, 5) {
+	          attribute<Geography/rdc> geometry  :=  fpoint(point( float32( 100.0*id(testgeo)),100.0*float32( id(testgeo)) ) );
+			  attribute<Classifications/UitkomstCats> uitkomst :=  uint8(id(testgeo));
+		  }
+	
 	}
 
 	container SourceData: Using = "Units"
@@ -374,7 +381,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			// code maken dat oude dbf eerst gewist wordt
 
 	  unit<uint32> i_land_dbf  := selectforlab
-	       ,    StorageName = "%ProjDir%/output/outp2land.dbf"       
+	       ,    StorageName = "%ProjDir%/output/outp2land.dbf"  
 	    {
          attribute<string> pcncmb  :=select2/ep_pcncmb;
 		 attribute<string> klaslet   := makedefined(select2/klaslet," ") ;
@@ -383,8 +390,10 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		 attribute<float32> ep_opp   := eputil/oppervlakte[Select2/ep_idx_vbo] ;
 		 attribute<int32> vbo_opp   := selectforlab/oppervlakte ;
 // storing geometry does not work		 , DisableStorage ="True" 
-		 attribute<Geography/rdc> vbo_geometry   := selectforlab/geometry, DisableStorage ="True"  ;
-		 attribute<Geography/rdc> geometry   := SourceData/bag_snapshot_result/adres/geometry[adres_idx_vbo], DisableStorage ="True"  ;
+		 attribute<Geography/rdc> vbo_geometry   := selectforlab/geometry
+		   ,    StorageName = "%ProjDir%/output/outp2landvbo.shp" ;
+		 attribute<Geography/rdc> geometry   := SourceData/bag_snapshot_result/adres/geometry[adres_idx_vbo]
+		    ,    StorageName = "%ProjDir%/output/outp2land.shp" ;
 		 attribute<Classifications/Uitkomstcats> uitkomst :=  iif( IsNull(Select2/ep_idx_vbo),
 		       const(Classifications/Uitkomstcats/V/geen, .), 
 			   iif( klaslet <= "C" , const(Classifications/Uitkomstcats/V/OK, .),
@@ -392,8 +401,8 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
         } 
 
 	  unit<uint32> outgeodbf  := union_unit(i_land_dbf,epnovbosel,epnoaddr  )
-	       ,    StorageName = "%ProjDir%/output/outp2geo.dbf"     
-
+	       ,    StorageName = "%ProjDir%/output/outp2geo.shp"  
+           ,    StorageType = "gdalwrite.vect"		   
       {
              attribute<string> pcncmb := union_data(., i_land_dbf/pcncmb,epnovbosel/ep_pcncmb_res,epnoaddr/ep_pcncmb_res );
 			 attribute<string> gemeente := union_data(., i_land_dbf/gemeente,epnovbosel/ep_gemeente,epnoaddr/ep_gemeente );
@@ -405,51 +414,50 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			        // how to set: PaletteDomain/SymbolColor = Uitkomstcats/SymbolColor;
 			   
 			 attribute<Geography/rdc> geometry :=union_data(., i_land_dbf/geometry,epnovbosel/geometry,epnoaddr/geometry );
+		         
       }
+			attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/gemeente, pergemeentecatd/Values) ;
 
 			unit<uint32> pergemeentecatd := unique(i_land_dbf/gemeente)
 // 	               ,    StorageName = "%ProjDir%/output/pergemeented.dbf"  
             {
-                  attribute<string>   gemeentenaamd  (pergemeentecatd)  := string( Values);	  
-			}
-			
-			    attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/gemeente, pergemeentecatd/Values) ;
-// functie lijkt niet te werken als verwacht
-            
-			
-	     unit<uint32>  pergemeentecat := pergemeentecatd
-	     ,    StorageName = "%ProjDir%/output/pergemeente.dbf"  
-          {		 		  
-				attribute<int32>   oppervlakte  (pergemeentecatd)  := sum(i_land_dbf/vbo_opp,gem_rel) ;
-				attribute<string>    gemeentenaam  (pergemeentecatd)  := first(i_land_dbf/gemeente,gem_rel) ;
-				//attribute<uint32>   aantal  (pergemeentecatd)  := count(i_land_dbf/vbo_opp,em_rel) ;
-				//attribute<int32>   avg  (pergemeentecatd)  := mean(i_land_dbf/vbo_opp,gem_rel) ;
+                attribute<string>     gemeentenaamd   := string( Values);	  
+				attribute<int32>      oppervlakte   := sum(i_land_dbf/vbo_opp,gem_rel) ;
+				attribute<string>     gemeentenaam   := first(i_land_dbf/gemeente,gem_rel) ;
+				//attribute<uint32>   aantal  := count(i_land_dbf/vbo_opp,em_rel) ;
+				//attribute<int32>    avg   := mean(i_land_dbf/vbo_opp,gem_rel) ;
 				unit<uint32> dlopp1 := classifications/Uitkomstcats {
-				     attribute<int32>   oppdl (pergemeentecatd)  := sum(
-					  iif(i_land_dbf/uitkomst == 1 , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ;
+				     attribute<uint8>   oppdl (pergemeentecatd)  := sum(
+					  iif(i_land_dbf/uitkomst == uint8(1) , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ;
 				}
 				
                 container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
-				'float32( sum( iif(i_land_dbf/uitkomst == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte) '
-				, pergemeentecat , float32);
-                attribute<float32>   R_geen  (pergemeentecatd)  :=  dlopppct/geen;
-				attribute<float32>   R_NOK  (pergemeentecatd)  :=  dlopppct/NOK;
-				attribute<float32>   R_OK  (pergemeentecatd)  :=  dlopppct/OK;     
+				'float32( sum( iif(uint32(i_land_dbf/uitkomst) == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte) '
+				, pergemeentecatd , float32);
+                attribute<float32>   R_geen    :=  dlopppct/geen;
+				attribute<float32>   R_NOK    :=  dlopppct/NOK;
+				attribute<float32>   R_OK    :=  dlopppct/OK;    
+				attribute<float32>   D_geen    :=  float32( sum( iif(uint32(i_land_dbf/uitkomst) == 
+				           uint32(const(Classifications/Uitkomstcats/V/geen, .))  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
+				attribute<float32>   D_NOK    :=  float32( sum( iif(i_land_dbf/uitkomst == 
+				           const(Classifications/Uitkomstcats/V/NOK, .)  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
+				attribute<float32>   D_OK    :=  dlopppct/OK;   				
              // incorrecte naam ?   				
-  			     attribute<DPoint> geometry (pergemeentecatd) := add_list(i_land_dbf/geometry,gem_rel) , DisableStorage ="True"  ;
+			 // importeren CBS gemeentekaarten ? -> voorbeeldje in wiki ??
+  			 //    attribute<DPoint> geometry (pergemeentecatd) := add_list(i_land_dbf/geometry,gem_rel) , DisableStorage ="True"  ;
             }
 
 
 
 //poging als voor andere opslag
-	     unit<uint32>  pergemeentecat2 := pergemeentecat
+	     unit<uint32>  pergemeentecat2 := pergemeentecatd
 	     ,    StorageName = "%ProjDir%/output/pergemeente2.dbf"   
 			{
-				attribute<string>    gemeentenaam  (pergemeentecat)  := ""+ pergemeentecat/ Values;
-				attribute<int32>     oppervlakte  (pergemeentecat)  := 0+pergemeentecat/ oppervlakte ;	
-                attribute<float32>   R_geen  (pergemeentecat)  := 0.0+pergemeentecat/ dlopppct/geen;
-				attribute<float32>   R_NOK  (pergemeentecat)  := 0.0+pergemeentecat/ dlopppct/NOK;
-				attribute<float32>   R_OK  (pergemeentecat)  := 0.0+pergemeentecat/ dlopppct/OK;
+				attribute<string>    gemeentenaam2    := ""+ string(pergemeentecatd/ Values);
+				attribute<int32>     oppervlakte2   := int32(0)+pergemeentecatd/ oppervlakte ;	
+                attribute<float32>   R_geen2   := float32(0)+pergemeentecatd/ R_geen;
+				attribute<float32>   R_NOK2   := float32(0)+pergemeentecatd/ R_NOK;
+				attribute<float32>   R_OK2    := float32(0)+pergemeentecatd/ R_OK;
             }
 
      }
