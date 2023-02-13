@@ -145,7 +145,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		unit<float64> m2     := m * m;
 
 	// no metric
-	unit<float32> ratio         := float32(range(1.0 * m2 / m2, 0.0, 1.0))	, cdf = "Classifications/ratio13F/ClassBreaks";
+	unit<float32> ratio         := float32(range(1.0 * m2 / m2, 0.0, 1.0))	, cdf = "Classifications/ratio13L/ClassBreaks";
 	unit<float32> percent       := float32(100.0 * ratio);
 // , cdf = "Classifications/Percentage13K/ClassBreaks";
 
@@ -349,7 +349,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 					attribute<Geography/rdc> geometry   := SourceData/bag_snapshot_result/vbo/geometry[Nr_OrgEntity];
                  }
 
-              
+           
 		    unit<uint32> eputil := subset( 
 			           ( SourceData/epdata/Pand_gebouwklasse == "U"  ) )
                  {
@@ -524,16 +524,19 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			,    StorageName = "%ProjDir%/output/kchk-pc.dbf" 
 			{
 			    attribute<string>     gemeentenaamd   := string( Values);	  
-				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/gemeente/GM_NAAM);
+				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/Gemeente/GM_NAAM);
 				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeente/geometry[gem_geo_idx];
+				attribute<ratio>  test         := float32(rnd_uniform(0, ., range(float32, 0f, 1f)));
             }
 			
 			unit<uint32> gemeentekoppchkcbs := unique(SourceData/CBS_2022/gemeente/GM_NAAM ) 
 			,    StorageName = "%ProjDir%/output/kchk-cbs.dbf" 
 			{
 			    attribute<string>     gemeentenaamd   := string( Values);	  
-				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/gemfrompc4/Gemeentenaam);
+				attribute<uint32>     gem_pc4_idx := rlookup(gemeentenaamd, SourceData/gemfrompc4/Gemeentenaam);
+				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/Gemeente/GM_NAAM);
 				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeente/geometry[gem_geo_idx];
+				attribute<ratio>  test         := float32(rnd_uniform(0, ., range(float32, 0f, 1f)));
             }
 			
 			unit<uint32> pergemeentecatd := unique(i_land_dbf/gemeente)
