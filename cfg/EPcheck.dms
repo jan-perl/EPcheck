@@ -214,11 +214,13 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
    container CBS_2022
    {
-      unit<uint32> gemeente: StorageName = "%ProjDir%/data/WijkBuurtkaart_2022_v1/WijkBuurtkaart_2022_v1/gemeente_2022_v1.shp"
+      unit<uint32> gemeenten: StorageName = "%ProjDir%/data/WijkBuurtkaart_2022_v1/WijkBuurtkaart_2022_v1/gemeente_2022_v1.shp"
       ,  StorageType     = "gdal.vect"
       ,	 StorageReadOnly = "True"
       {
          attribute<Geography/rdc> geometry (polygon);
+		 // compatibility with GPKG names
+		 attribute<string> Gemeentenaam := GM_NAAM;
       }
 
       unit<uint32> wijk: StorageName = "%ProjDir%/data/WijkBuurtkaart_2022_v1/WijkBuurtkaart_2022_v1/wijk_2022_v1.shp"
@@ -228,16 +230,21 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
          attribute<Geography/rdc> geometry (polygon);
       }
 
-      unit<uint32> buurt: StorageName = "%ProjDir%data//WijkBuurtkaart_2022_v1/WijkBuurtkaart_2022_v1/buurt_2022_v1.shp"
+      unit<uint32> buurt: StorageName = "%ProjDir%/data/WijkBuurtkaart_2022_v1/WijkBuurtkaart_2022_v1/buurt_2022_v1.shp"
       ,  StorageType     = "gdal.vect"
       ,  StorageReadOnly = "True"
       {
          attribute<Geography/rdc> geometry (polygon);
       }
    }
+   container CBS_2022_gpkg : StorageName = "%ProjDir%/data/WijkBuurtkaart_2022_v1/WijkBuurtkaart_2022_v1/wijkenbuurten_2022_v1.gpkg"
+         ,  StorageType     = "gdal.vect"
+   ,  StorageReadOnly = "True"
+   ,  SyncMode        = "AllTables"
+   ,  DialogData      = "Geography/rdc";
+   
 
-
-
+ 
     unit<uint32> epdata_c
 :  StorageName     = "%ProjDir%/data/v20230101_v2_csv.csv"
 ,  StorageType     = "gdal.vect"
@@ -524,18 +531,18 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			,    StorageName = "%ProjDir%/output/kchk-pc.dbf" 
 			{
 			    attribute<string>     gemeentenaamd   := string( Values);	  
-				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/Gemeente/GM_NAAM);
-				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeente/geometry[gem_geo_idx];
+				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/gemeenten/Gemeentenaam);
+				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeenten/geometry[gem_geo_idx];
 				attribute<ratio>  test         := float32(rnd_uniform(0, ., range(float32, 0f, 1f)));
             }
 			
-			unit<uint32> gemeentekoppchkcbs := unique(SourceData/CBS_2022/gemeente/GM_NAAM ) 
+			unit<uint32> gemeentekoppchkcbs := unique(SourceData/CBS_2022/gemeenten/Gemeentenaam ) 
 			,    StorageName = "%ProjDir%/output/kchk-cbs.dbf" 
 			{
 			    attribute<string>     gemeentenaamd   := string( Values);	  
 				attribute<uint32>     gem_pc4_idx := rlookup(gemeentenaamd, SourceData/gemfrompc4/Gemeentenaam);
-				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/Gemeente/GM_NAAM);
-				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeente/geometry[gem_geo_idx];
+				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/gemeenten/Gemeentenaam);
+				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeenten/geometry[gem_geo_idx];
 				attribute<ratio>  test         := float32(rnd_uniform(0, ., range(float32, 0f, 1f)));
             }
 			
@@ -543,7 +550,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
  	               ,    StorageName = "%ProjDir%/output/pergemeented.dbf"  
             {
                 attribute<string>     gemeentenaamd   := string( Values);	  
-				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/gemeente/GM_NAAM);
+				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/gemeente/Gemeentenaam);
 				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeente/geometry[gem_geo_idx]
 				   ,    StorageName = "%ProjDir%/output/pergemeented.shp";
 				attribute<int32>      oppervlakte   := sum(i_land_dbf/vbo_opp,gem_rel) ;
