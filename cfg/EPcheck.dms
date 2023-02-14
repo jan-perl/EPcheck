@@ -570,8 +570,8 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
  	               ,    StorageName = "%ProjDir%/output/pergemeented.dbf"  
             {
                 attribute<string>     gemeentenaamd   := string( Values);	  
-				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/gemeente/Gemeentenaam);
-				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeente/geometry[gem_geo_idx]
+				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/gemeenten/Gemeentenaam);
+				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeenten/geometry[gem_geo_idx]
 				   ,    StorageName = "%ProjDir%/output/pergemeented.shp";
 				attribute<int32>      oppervlakte   := sum(i_land_dbf/vbo_opp,gem_rel) ;
 				attribute<string>     gemeentenaam   := first(i_land_dbf/gemeente,gem_rel) ;
