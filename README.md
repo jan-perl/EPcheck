@@ -9,6 +9,11 @@ https://iplo.nl/thema/energiebesparing/energielabel-verplichting-kantoren/inform
 
 Werkt door EPonline met BAG te combineren
 
+Dit programma is geschrven voor GeoDMS versie 7 of 8
+start met het installeren van GeoDMS
+https://github.com/ObjectVision/GeoDMS/wiki/Installation-Instructions
+
+
 Installatie:
 maak folder data, op zelfde niveau als cfg, ernaast
 maak folder output, op zelfde niveau als cfg, ernaast
