@@ -194,7 +194,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 ,  SyncMode        = "allTables"
 ,  StorageReadOnly = "True" ;
 
-    unit<uint32> gemfrompc4
+    unit<uint32> gemfrompc4_fssin
 :  StorageName = "%ProjDir%/data/gemfrompc4f.fss"
 ,  StorageReadOnly = "True" {
 
@@ -279,7 +279,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	  container epdata_filtset {
 	        attribute<string> ep_pc4 (epdata_uf) := substr(epdata_uf/ep_pcncmb,0,4);			
 			attribute<string> ep_gemeente (epdata_uf) := rjoin(ep_pc4,
-			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
+			              gemfrompc4/Postcode4,gemfrompc4/Gemeentenaam  );
 	  }
 	  
 	   unit<uint32> epdata_ameland := subset( 
@@ -395,7 +395,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 					attribute<Int32> oppervlakte  := IsNull( Int32(round(eputil/oppervlakte [Nr_OrgEntity])),0,
 					                          Int32(round(eputil/oppervlakte [Nr_OrgEntity])) );
 			        attribute<string> ep_gemeente := rjoin(ep_pc4,
-			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
+			              gemfrompc4/Postcode4,gemfrompc4/Gemeentenaam  );
 				    attribute<string> ep_straat :=  iif( IsNull(adres_idx_epnr ),"",  
 					         SourceData/bag_snapshot_result/adres/Straatnaam [adres_idx_epnr] );		
 				     attribute<Geography/rdc> geometry  := SourceData/bag_snapshot_result/adres/geometry [adres_idx_epnr ] ;	 
@@ -442,7 +442,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 					attribute<float32> ep_opp   := eputil/oppervlakte[Nr_OrgEntity];
 					attribute<string> ep_pc4  := substr(ep_pcncmb_res,0,4);
 			        attribute<string> ep_gemeente := rjoin(ep_pc4,
-			              SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
+			              gemfrompc4/Postcode4,gemfrompc4/Gemeentenaam  );
 				    attribute<UInt32> bag_adres_idx := adres_idx_ep [Nr_OrgEntity];
 				    attribute<UInt32> uvbo_idx := adres_idx_uvbo[bag_adres_idx];
 					attribute<string> ep_straat :=  
@@ -475,7 +475,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			attribute<string> Straatnaam (selectforlab ) := SourceData/bag_snapshot_result/adres/Straatnaam [adres_idx_vbo];
 			attribute<string> pc4 (selectforlab ) := substr(ep_pcncmb,0,4);
 			attribute<string> gemeente (selectforlab ) := rjoin(pc4,
-			    SourceData/gemfrompc4/Postcode4,SourceData/gemfrompc4/Gemeentenaam  );
+			    gemfrompc4/Postcode4,gemfrompc4/Gemeentenaam  );
 		}
 			
 			// code maken dat oude dbf eerst gewist wordt
@@ -521,13 +521,13 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			 ,    StorageName = "%ProjDir%/output/outp2geo.shp";
 		         
       }
-			attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/gemeente, pergemeentecatd/Values) ;
+			
 
             container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
 				'float32( sum( iif(uint32(i_land_dbf/uitkomst) == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(pergemeentecatd/oppervlakte) '
 				, pergemeentecatd , float32), DisableStorage ="True" ;
 				
-		    unit<uint32> gemeentekoppchkpc := unique(SourceData/gemfrompc4/Gemeentenaam ) 
+		    unit<uint32> gemeentekoppchkpc := unique(gemfrompc4/Gemeentenaam ) 
 			,    StorageName = "%ProjDir%/output/kchk-pc.dbf" 
 			{
 			    attribute<string>     gemeentenaamd   := string( Values);	  
@@ -540,12 +540,32 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			,    StorageName = "%ProjDir%/output/kchk-cbs.dbf" 
 			{
 			    attribute<string>     gemeentenaamd   := string( Values);	  
-				attribute<uint32>     gem_pc4_idx := rlookup(gemeentenaamd, SourceData/gemfrompc4/Gemeentenaam);
+				attribute<uint32>     gem_pc4_idx := rlookup(gemeentenaamd, gemfrompc4/Gemeentenaam);
 				attribute<uint32>     gem_geo_idx := rlookup(gemeentenaamd, SourceData/CBS_2022/gemeenten/Gemeentenaam);
 				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeenten/geometry[gem_geo_idx];
 				attribute<ratio>  test         := float32(rnd_uniform(0, ., range(float32, 0f, 1f)));
             }
 			
+			attribute<string> gempccombi (SourceData/CBS_2022/buurt) :=  iif (isnull(SourceData/CBS_2022/buurt/POSTCODE),
+                   "0000",SourceData/CBS_2022/buurt/POSTCODE)			+"\t" + SourceData/CBS_2022/buurt/GM_NAAM;
+			attribute<uint32>  gpcco_rel (SourceData/CBS_2022/buurt) := rlookup(gempccombi , combicnt1/Values) ;
+			unit<uint32> combicnt1 := unique(gempccombi) 			
+			{
+			    attribute<string>   val   := string( Values);	  
+				attribute<string>   pc := substr(val,0,4) ;
+				attribute<string>   gemeente := substr(val,5,9999) ;
+				attribute<uint32>   aantal  := pcount(gpcco_rel) ;
+            }
+			attribute<uint32>  pc4tab1_rel (combicnt1) := rlookup(combicnt1/pc , Gemfrompc4/Values) ;
+			unit<uint32> Gemfrompc4 := unique(combicnt1/pc) 
+			,   StorageName = "%ProjDir%/data/gemfrompc4d.dbf"
+			{
+			    attribute<uint32>   maxidx  := max_index(combicnt1/aantal,pc4tab1_rel) ;
+				attribute<string>   Gemeentenaam := combicnt1/gemeente[maxidx ] ;
+				attribute<string>   Postcode4 := combicnt1/pc[maxidx ] ;
+			}
+			
+			attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/gemeente, pergemeentecatd/Values) ;
 			unit<uint32> pergemeentecatd := unique(i_land_dbf/gemeente)
  	               ,    StorageName = "%ProjDir%/output/pergemeented.dbf"  
             {
