@@ -183,6 +183,8 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
        parameter<string> bagsrcfil := iif( config1/alleen_Ameland,"%ProjDir%/data/BAG_Ameland_20230101/BAG_Ameland_20230101.gpkg",
 	          "%ProjDir%/data/bag_snapshot_20221001/snapshot_20221001.gpkg");
+	  parameter<string> epcsvsrcfil :=	 "%ProjDir%/data/v20230301_v2_csv/v20230301_v2_csv.csv";
+	  parameter<int32> epsrcdat :=	 int32 (substr(epcsvsrcfil,16,8));
 
 	container bag_snapshot_result: 
   StorageName     = "=bagsrcfil" // Path to shapefile (2D spatial dataset + N attributes)
@@ -251,7 +253,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
  
     unit<uint32> epdata_c
-:  StorageName     = "%ProjDir%/data/v20230201_v2_csv/v20230201_v2_csv.csv"
+:  StorageName     = "=epcsvsrcfil"
 ,  StorageType     = "gdal.vect"
 ,  SyncMode        = "allTables"
 ,  StorageReadOnly = "True" {
@@ -585,9 +587,8 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
         } 
 
 	  unit<uint32> outgeodbf  := union_unit(i_land_dbf,epnovbosel,epnoaddr  )
-//	       ,    StorageName = "%ProjDir%/output/outp2geo.shp"  
-//           ,    StorageType = "gdalwrite.vect"	
-	       ,    StorageName = "%ProjDir%/output/outp2geo.dbf"  	   
+	       ,    StorageName = "%ProjDir%/output/outp2geo.shp"  
+           ,    StorageType = "gdalwrite.vect"	 
       {
 			  // write gda1write schrijft database niet weg, shp onder dbf geen geo data
              attribute<string> pcncmb := union_data(., i_land_dbf/pcncmb,epnovbosel/ep_pcncmb_res,epnoaddr/ep_pcncmb_res );
@@ -601,27 +602,22 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			 attribute<Classifications/Uitkomstcats> uitkomst := union_data(., i_land_dbf/uitkomst,epnovbosel/uitkomst,epnoaddr/uitkomst ) ;
 	  }		 
 			       
-	  unit<uint32> outgeodbf_shp := union_unit(outgeodbf  )		
-	       ,    StorageName = "%ProjDir%/output/outp2geo.shp"  
-           ,    StorageType = "gdalwrite.vect"		   
-	  {
-			 attribute<Geography/rdc> geometry :=union_data(., i_land_dbf/geometry,epnovbosel/geometry,epnoaddr/geometry );		         
-      }
-			
-
             container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
 				'float32( sum( iif(uint32(i_land_dbf/uitkomst) == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(pergemeentecatd/oppervl) '
 				, pergemeentecatd , float32), DisableStorage ="True" ;
 				
 			
 			attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/GW_CODE, pergemeentecatd/Values) ;
+
 			unit<uint32> pergemeentecatd := unique(i_land_dbf/GW_CODE)
- 	            ,    StorageName = "%ProjDir%/output/pergemeented.dbf"     
+		          ,    StorageName = "%ProjDir%/output/pergemeented.shp"  
+				     ,    StorageType = "gdalwrite.vect"					
             {
                 attribute<string>     GW_CODE   := string( Values);	  
 				attribute<uint32>     gem_geo_idx := rlookup(GW_CODE, SourceData/CBS_2022/gemeenten/GW_CODE);
 				attribute<int32>      oppervl   := sum(i_land_dbf/vbo_opp,gem_rel) ;
-				attribute<string>     gemeente  := first(i_land_dbf/gemeente,gem_rel) ;				
+				attribute<string>     gemeente  := first(i_land_dbf/gemeente,gem_rel) ;	
+				attribute<int32>      epsrcdat 	:= const(SourceData/epsrcdat,.);	
 
 				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeenten/geometry[gem_geo_idx];				  
 				
@@ -640,35 +636,8 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
             }
 
 
-
-//poging als voor andere opslag
-	     unit<uint32>  pergemeentecat2 := pergemeentecatd
-		 ,    StorageName = "%ProjDir%/output/pergemeente2.shp"  
-				     ,    StorageType = "gdalwrite.vect"	
-	      
-			{
-				attribute<string>     GW_CODE   := ""+pergemeentecatd/GW_CODE;	
-				attribute<uint32>     gem_geo_idx := pergemeentecatd/gem_geo_idx;
-				attribute<string>    gemeente    := pergemeentecatd/gemeente;
-				
-				attribute<Geography/rdc> geometry (polygon) := pergemeentecatd/geometry;	
-				attribute<int32>     oppervl   := Int32(0)+ pergemeentecatd/oppervl ;	
-                 attribute<ratio> R_geen2     := pergemeentecatd/R_geen;
-                attribute<ratio> R_NOK2    := pergemeentecatd/R_NOK;
-                attribute<ratio> R_OK2       := pergemeentecatd/R_OK;
-				attribute<ratio>   R_niett    :=  pergemeentecatd/R_niett;   
-				attribute<ratio>   R_uitz    :=  pergemeentecatd/R_uitz;
-				
-            }
-
+		}
 	
-			
-
-     }
- 
-
-
-		
 
 		
 	}
