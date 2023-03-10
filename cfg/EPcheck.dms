@@ -588,8 +588,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
 	  unit<uint32> outgeodbf  := union_unit(i_land_dbf,epnovbosel,epnoaddr  )
 	       ,    StorageName = "%ProjDir%/output/outp2geo.shp"  
-           ,    StorageType = "gdalwrite.vect"	
-//	       ,    StorageName = "%ProjDir%/output/outp2geo.dbf"  	   
+           ,    StorageType = "gdalwrite.vect"	 
       {
 			  // write gda1write schrijft database niet weg, shp onder dbf geen geo data
              attribute<string> pcncmb := union_data(., i_land_dbf/pcncmb,epnovbosel/ep_pcncmb_res,epnoaddr/ep_pcncmb_res );
@@ -603,15 +602,13 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			 attribute<Classifications/Uitkomstcats> uitkomst := union_data(., i_land_dbf/uitkomst,epnovbosel/uitkomst,epnoaddr/uitkomst ) ;
 	  }		 
 			       
-
-
             container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
 				'float32( sum( iif(uint32(i_land_dbf/uitkomst) == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(pergemeentecatd/oppervl) '
 				, pergemeentecatd , float32), DisableStorage ="True" ;
 				
 			
 			attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/GW_CODE, pergemeentecatd/Values) ;
-// 	            ,    StorageName = "%ProjDir%/output/pergemeented.dbf"    
+
 			unit<uint32> pergemeentecatd := unique(i_land_dbf/GW_CODE)
 		          ,    StorageName = "%ProjDir%/output/pergemeented.shp"  
 				     ,    StorageType = "gdalwrite.vect"					
@@ -639,35 +636,8 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
             }
 
 
-
-//poging als voor andere opslag
-	     unit<uint32>  pergemeentecat2 := pergemeentecatd
-		 ,    StorageName = "%ProjDir%/output/pergemeente2.shp"  
-				     ,    StorageType = "gdalwrite.vect"	
-	      
-			{
-				attribute<string>     GW_CODE   := ""+pergemeentecatd/GW_CODE;	
-				attribute<uint32>     gem_geo_idx := pergemeentecatd/gem_geo_idx;
-				attribute<string>    gemeente    := pergemeentecatd/gemeente;
-				
-				attribute<Geography/rdc> geometry (polygon) := pergemeentecatd/geometry;	
-				attribute<int32>     oppervl   := Int32(0)+ pergemeentecatd/oppervl ;	
-                 attribute<ratio> R_geen2     := pergemeentecatd/R_geen;
-                attribute<ratio> R_NOK2    := pergemeentecatd/R_NOK;
-                attribute<ratio> R_OK2       := pergemeentecatd/R_OK;
-				attribute<ratio>   R_niett    :=  pergemeentecatd/R_niett;   
-				attribute<ratio>   R_uitz    :=  pergemeentecatd/R_uitz;
-				
-            }
-
+		}
 	
-			
-
-     }
- 
-
-
-		
 
 		
 	}
