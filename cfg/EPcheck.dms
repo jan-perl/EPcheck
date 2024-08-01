@@ -182,7 +182,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	{
 
        parameter<string> bagsrcfil := iif( config1/alleen_Ameland,"%ProjDir%/data/BAG_Ameland_20230101/BAG_Ameland_20230101.gpkg",
-	          "%ProjDir%/data/bag_snapshot_20221001/snapshot_20221001.gpkg");
+	          "%ProjDir%/data/bag_snapshot_20240101/snapshot_20240101.gpkg");
 	  parameter<string> epcsvsrcfil :=	 "%ProjDir%/data/v20230301_v2_csv/v20230301_v2_csv.csv";
 	  parameter<int32> epsrcdat :=	 int32 (substr(epcsvsrcfil,16,8));
 
