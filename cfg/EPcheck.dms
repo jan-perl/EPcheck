@@ -11,7 +11,7 @@ container EPcheck
     container config1 // Define configuration
 	{
 	    
-		parameter<bool> alleen_Ameland := False, 
+		parameter<bool> alleen_Ameland := True, 
 		Descr= "Door deze op True te zetten, runt het model snel, en kun je debuggen
 		Zorg er bij check-in in github voor dat deze op True staat !";
 	}
