@@ -183,7 +183,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
        parameter<string> bagsrcfil := iif( config1/alleen_Ameland,"%ProjDir%/data/BAG_Ameland_20230101/BAG_Ameland_20230101.gpkg",
 	          "%ProjDir%/data/bag_snapshot_20240101/snapshot_20240101.gpkg");
-	  parameter<string> epcsvsrcfil :=	 "%ProjDir%/data/v20240301_v2_csv/v20240301_v2_csv.csv";
+	  parameter<string> epcsvsrcfil :=	 "%ProjDir%/data/v20230301_v2_csv/v20230301_v2_csv.csv";
 	  parameter<int32> epsrcdat :=	 int32 (substr(epcsvsrcfil,16,8));
 
 	container bag_snapshot_result: 
@@ -587,9 +587,8 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
         } 
 
 	  unit<uint32> outgeodbf  := union_unit(i_land_dbf,epnovbosel,epnoaddr  )
-	  	       ,    StorageName = "%ProjDir%/output/outp2geo.dbf"  
-//	       ,    StorageName = "%ProjDir%/output/outp2geo.shp"  
-//           ,    StorageType = "gdalwrite.vect"	 
+	       ,    StorageName = "%ProjDir%/output/outp2geo.shp"  
+           ,    StorageType = "gdalwrite.vect"	 
       {
 			  // write gda1write schrijft database niet weg, shp onder dbf geen geo data
              attribute<string> pcncmb := union_data(., i_land_dbf/pcncmb,epnovbosel/ep_pcncmb_res,epnoaddr/ep_pcncmb_res );
@@ -601,7 +600,6 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			 attribute<float32> ep_opp := union_data(., i_land_dbf/ep_opp,epnovbosel/ep_opp,epnoaddr/oppervlakte );
 			 attribute<Int32> vbo_opp := union_data(., i_land_dbf/vbo_opp,epnovbosel/vbo_opp,int32(epnoaddr/oppervlakte) );			 
 			 attribute<Classifications/Uitkomstcats> uitkomst := union_data(., i_land_dbf/uitkomst,epnovbosel/uitkomst,epnoaddr/uitkomst ) ;
-			 attribute<Geography/rdc> geometry   :=  union_data(., i_land_dbf/geometry,epnovbosel/geometry,epnoaddr/geometry );
 	  }		 
 			       
             container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
