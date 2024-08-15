@@ -14,6 +14,9 @@ container EPcheck
 		parameter<bool> alleen_Ameland := True, 
 		Descr= "Door deze op True te zetten, runt het model snel, en kun je debuggen
 		Zorg er bij check-in in github voor dat deze op True staat !";
+		parameter <string> BAGVERSION := "20240101";
+		parameter <string> EPCVERSION := "v20230301_v2";
+		parameter<int32> epsrcdat :=	 int32 (substr(EPCVERSION,1,8));
 	}
 
 container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
@@ -162,11 +165,11 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
  
 	container Geography // Define the extend of the scene and the projection 
 	{
-		unit<fpoint> rdc_base : format = "EPSG:28992", DialogData = "ngr_layer";               // Rijksdriehoekstelsel, a 2D cartesian coordinate system for the netherlands
+		unit<fpoint> rdc_base : format = "EPSG:28992", DialogData = "wmts_layer";               // Rijksdriehoekstelsel, a 2D cartesian coordinate system for the netherlands
 		unit<fpoint> rdc_meter      := range(rdc_base, point(0f, 300000f), point(280000f, 625000f)); // Define a 2D range consisting of 2D cartesian coordinates, later used for the "province" domain unit geometry attribute
 		unit<fpoint> rdc      := Geography/rdc_meter;
 
-		#include<ngr_layer.dms>                                                                // Tiles for background layer
+		#include<wmts_layer.dms>                                                                // Tiles for background layer
 	}
 
     container ColorExamples: Using = "Units" 
@@ -182,9 +185,9 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	{
 
        parameter<string> bagsrcfil := iif( config1/alleen_Ameland,"%ProjDir%/data/BAG_Ameland_20230101/BAG_Ameland_20230101.gpkg",
-	          "%ProjDir%/data/bag_snapshot_20240101/snapshot_20240101.gpkg");
-	  parameter<string> epcsvsrcfil :=	 "%ProjDir%/data/v20230301_v2_csv/v20230301_v2_csv.csv";
-	  parameter<int32> epsrcdat :=	 int32 (substr(epcsvsrcfil,16,8));
+	          "%ProjDir%/data/bag_snapshot_"+config1/BAGVERSION+"/snapshot_"+config1/BAGVERSION+".gpkg");
+	  parameter<string> epcsvsrcfil :=	 "%ProjDir%/data/"+config1/EPCVERSION+ "_csv/"+config1/EPCVERSION+"_csv.csv";
+	  
 
 	container bag_snapshot_result: 
   StorageName     = "=bagsrcfil" // Path to shapefile (2D spatial dataset + N attributes)
@@ -200,7 +203,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 ,  StorageReadOnly = "True" ;
 
     unit<uint32> gemfrompc4_fssin
-:  StorageName = "%ProjDir%/data/gemfrompc4f.fss"
+:  StorageName = "%ProjDir%/intermediate/gemfrompc4f.fss"
 ,  StorageReadOnly = "True" {
 
    attribute<string> Postcode4  ;
@@ -264,7 +267,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
         }
 
     unit<uint32> epdata_d
-:  StorageName     = "%ProjDir%/data/epdata_d.dbf"  
+:  StorageName     = "%ProjDir%/intermediate/epdata_d.dbf"  
 ,  SyncMode        = "allTables"
 ,  StorageReadOnly = "True" {
          attribute<string> Pand_energieklasse  := PAND_ENERG + "";
@@ -273,7 +276,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
         }
 
 	  	  unit<uint32> epdata_uf   :
-                    StorageName = "%ProjDir%/data/epdata_f.fss" 
+                    StorageName = "%ProjDir%/intermediate/epdata_f.fss" 
 					 ,  SyncMode        = "allTables"
 ,  StorageReadOnly = "True"       {
          attribute<string> ep_pcncmb;        
@@ -308,13 +311,13 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	container ToDbf: Using = "Units"
 	{
 	     unit<uint32> i_pc4_dbf  := SourceData/gemfrompc4c ,
-                    StorageName = "%ProjDir%/data/gemfrompc4d.dbf"        {
+                    StorageName = "%ProjDir%/intermediate/gemfrompc4d.dbf"        {
          attribute<string> Postcode4  := SourceData/gemfrompc4c/Postcode4;
          attribute<string> Gemeentenaam:= SourceData/gemfrompc4c/Gemeentenaam;
       } 
 	  
 	  unit<uint32> i_epdat_dbf  := SourceData/epdata_c ,
-                    StorageName = "%ProjDir%/data/epdata_d.dbf"        {
+                    StorageName = "%ProjDir%/intermediate/epdata_d.dbf"        {
          attribute<string> pcncmb  := SourceData/epdata_c/ep_pcncmb;
 		 attribute<string> pcncmbnr  := SourceData/epdata_c/ep_pcncmbnr;
 		 attribute<string> klaslet   := SourceData/epdata_c/ep_klaslet ;
@@ -324,7 +327,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
       } 
 	  
 	  	  unit<uint32> i_epdat_fss  := SourceData/epdata_c ,
-                    StorageName = "%ProjDir%/data/epdata_f.fss"        {
+                    StorageName = "%ProjDir%/intermediate/epdata_f.fss"        {
          attribute<string> ep_pcncmb  := SourceData/epdata_c/ep_pcncmb;
 		 attribute<string> ep_pcncmbnr  := SourceData/epdata_c/ep_pcncmbnr;
 		 attribute<string> ep_klaslet  := SourceData/epdata_c/ep_klaslet ;
@@ -334,7 +337,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
       } 
 	  
 	  unit<uint32> i_gemfrompc4_fss := SourceData/gemfrompc4c
-,   StorageName = "%ProjDir%/data/gemfrompc4f.fss"
+,   StorageName = "%ProjDir%/intermediate/gemfrompc4f.fss"
 {
 
    attribute<string> Postcode4  := SourceData/gemfrompc4c/Postcode4;
@@ -361,7 +364,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			
 			
 			unit<uint32> Gemfrompc4 :=  unique(combicnt1/pc) 
-			,   StorageName = "%ProjDir%/data/gemfrompc4d.dbf"
+			,   StorageName = "%ProjDir%/intermediate/gemfrompc4d.dbf"
 			, Descr = "and the output table, previously in csv"
 			{
 			    attribute<uint32>   maxidx  := max_index(combicnt1/aantal,pc4tab1_rel) ;
