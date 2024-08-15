@@ -11,11 +11,11 @@ container EPcheck
     container config1 // Define configuration
 	{
 	    
-		parameter<bool> alleen_Ameland := True, 
+		parameter<bool> alleen_Ameland := False,
 		Descr= "Door deze op True te zetten, runt het model snel, en kun je debuggen
 		Zorg er bij check-in in github voor dat deze op True staat !";
 		parameter <string> BAGVERSION := "20240101";
-		parameter <string> EPCVERSION := "v20230301_v2";
+		parameter <string> EPCVERSION := "v20240601_v2";
 	}
 
 container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
