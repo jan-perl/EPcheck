@@ -16,7 +16,6 @@ container EPcheck
 		Zorg er bij check-in in github voor dat deze op True staat !";
 		parameter <string> BAGVERSION := "20240101";
 		parameter <string> EPCVERSION := "v20230301_v2";
-		parameter<int32> epsrcdat :=	 int32 (substr(EPCVERSION,1,8));
 	}
 
 container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
@@ -184,10 +183,11 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	container SourceData: Using = "Units"
 	{
 
-       parameter<string> bagsrcfil := iif( config1/alleen_Ameland,"%ProjDir%/data/BAG_Ameland_20230101/BAG_Ameland_20230101.gpkg",
+      parameter<string> bagsrcfil := iif( config1/alleen_Ameland,"%ProjDir%/data/BAG_Ameland_20230101/BAG_Ameland_20230101.gpkg",
 	          "%ProjDir%/data/bag_snapshot_"+config1/BAGVERSION+"/snapshot_"+config1/BAGVERSION+".gpkg");
 	  parameter<string> epcsvsrcfil :=	 "%ProjDir%/data/"+config1/EPCVERSION+ "_csv/"+config1/EPCVERSION+"_csv.csv";
-	  
+      parameter<string> epcimfil    := "%ProjDir%/intermediate/epdata_f_"+Config1/EPCVERSION+".fss" ;
+	  parameter<int32> epsrcdat :=	 int32 (substr(Config1/EPCVERSION,1,8));
 
 	container bag_snapshot_result: 
   StorageName     = "=bagsrcfil" // Path to shapefile (2D spatial dataset + N attributes)
@@ -196,29 +196,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 , SyncMode        = "allTables"
 , DialogData      = "geography/rdc";
 
-    unit<uint32> gemfrompc4c
-:  StorageName     = "%ProjDir%/data/gemfrompc4.csv"
-,  StorageType     = "gdal.vect"
-,  SyncMode        = "allTables"
-,  StorageReadOnly = "True" ;
-
-    unit<uint32> gemfrompc4_fssin
-:  StorageName = "%ProjDir%/intermediate/gemfrompc4f.fss"
-,  StorageReadOnly = "True" {
-
-   attribute<string> Postcode4  ;
-   attribute<string> Gemeentenaam;
-
-}
-
-
-    unit<uint32> gemfrompc4d
-:  StorageName = "%ProjDir%/data/gemfrompc4d.dbf"
-,  StorageReadOnly = "True" ;
-
-
-//    unit<uint32> gemfrompc4 := gemfrompc4d;
-
+  
 
    container CBS_2022
    {
@@ -254,7 +232,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
    ,  DialogData      = "Geography/rdc";
    
 
- 
+ // epdata_c is only used in toDbf
     unit<uint32> epdata_c
 :  StorageName     = "=epcsvsrcfil"
 ,  StorageType     = "gdal.vect"
@@ -266,17 +244,9 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		   attribute<string> ep_klaslet   := substr( Pand_energieklasse,0,1 );
         }
 
-    unit<uint32> epdata_d
-:  StorageName     = "%ProjDir%/intermediate/epdata_d.dbf"  
-,  SyncMode        = "allTables"
-,  StorageReadOnly = "True" {
-         attribute<string> Pand_energieklasse  := PAND_ENERG + "";
-//		 attribute<string> Pand_gebouwklasse   := PAND_GEBOU ;
-//		 attribute<string> Pand_gebruiksoppervlakte_thermische_zone    := PAND_GEBRU ;
-        }
 
 	  	  unit<uint32> epdata_uf   :
-                    StorageName = "%ProjDir%/intermediate/epdata_f.fss" 
+                    StorageName = "=epcimfil" 
 					 ,  SyncMode        = "allTables"
 ,  StorageReadOnly = "True"       {
          attribute<string> ep_pcncmb;        
@@ -307,15 +277,42 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
 	}
 
-
-	container ToDbf: Using = "Units"
+	container _obsolete: Using = "Units"
 	{
-	     unit<uint32> i_pc4_dbf  := SourceData/gemfrompc4c ,
-                    StorageName = "%ProjDir%/intermediate/gemfrompc4d.dbf"        {
-         attribute<string> Postcode4  := SourceData/gemfrompc4c/Postcode4;
-         attribute<string> Gemeentenaam:= SourceData/gemfrompc4c/Gemeentenaam;
-      } 
-	  
+  unit<uint32> gemfrompc4c
+:  StorageName     = "%ProjDir%/data/gemfrompc4.csv"
+,  StorageType     = "gdal.vect"
+,  SyncMode        = "allTables"
+,  StorageReadOnly = "True" ;
+
+    unit<uint32> gemfrompc4_fssin
+:  StorageName = "%ProjDir%/intermediate/gemfrompc4f.fss"
+,  StorageReadOnly = "True" {
+
+   attribute<string> Postcode4  ;
+   attribute<string> Gemeentenaam;
+
+}
+
+
+    unit<uint32> gemfrompc4d
+:  StorageName = "%ProjDir%/data/gemfrompc4d.dbf"
+,  StorageReadOnly = "True" ;
+
+
+//    unit<uint32> gemfrompc4 := gemfrompc4d;
+
+
+    unit<uint32> epdata_d
+:  StorageName     = "%ProjDir%/intermediate/epdata_d.dbf"  
+,  SyncMode        = "allTables"
+,  StorageReadOnly = "True" {
+         attribute<string> Pand_energieklasse  := PAND_ENERG + "";
+//		 attribute<string> Pand_gebouwklasse   := PAND_GEBOU ;
+//		 attribute<string> Pand_gebruiksoppervlakte_thermische_zone    := PAND_GEBRU ;
+        }
+
+
 	  unit<uint32> i_epdat_dbf  := SourceData/epdata_c ,
                     StorageName = "%ProjDir%/intermediate/epdata_d.dbf"        {
          attribute<string> pcncmb  := SourceData/epdata_c/ep_pcncmb;
@@ -325,17 +322,13 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		 attribute<string> gebouwkl   := SourceData/epdata_c/Pand_gebouwklasse ;
 		 attribute<string> gebropp   := SourceData/epdata_c/Pand_gebruiksoppervlakte_thermische_zone ;
       } 
-	  
-	  	  unit<uint32> i_epdat_fss  := SourceData/epdata_c ,
-                    StorageName = "%ProjDir%/intermediate/epdata_f.fss"        {
-         attribute<string> ep_pcncmb  := SourceData/epdata_c/ep_pcncmb;
-		 attribute<string> ep_pcncmbnr  := SourceData/epdata_c/ep_pcncmbnr;
-		 attribute<string> ep_klaslet  := SourceData/epdata_c/ep_klaslet ;
-         attribute<string> Pand_energieklasse  := SourceData/epdata_c/Pand_energieklasse ;
-		 attribute<string> Pand_gebouwklasse := SourceData/epdata_c/Pand_gebouwklasse ;
-		 attribute<string> Pand_gebruiksoppervlakte_thermische_zone   := SourceData/epdata_c/Pand_gebruiksoppervlakte_thermische_zone ;
-      } 
-	  
+ 
+	     unit<uint32> i_pc4_dbf  := SourceData/gemfrompc4c ,
+                    StorageName = "%ProjDir%/intermediate/gemfrompc4d.dbf"        {
+         attribute<string> Postcode4  := SourceData/gemfrompc4c/Postcode4;
+         attribute<string> Gemeentenaam:= SourceData/gemfrompc4c/Gemeentenaam;
+      } 	  
+
 	  unit<uint32> i_gemfrompc4_fss := SourceData/gemfrompc4c
 ,   StorageName = "%ProjDir%/intermediate/gemfrompc4f.fss"
 {
@@ -344,6 +337,27 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
    attribute<string> Gemeentenaam:= SourceData/gemfrompc4c/Gemeentenaam;
 
 }
+
+ }	  
+
+	container ToDbf: Using = "Units"
+	{
+	    
+         parameter<string> epcimfil    := SourceData/epcimfil;		
+	
+
+
+	  	  unit<uint32> i_epdat_fss  := SourceData/epdata_c ,
+                    StorageName = "=epcimfil"        {
+         attribute<string> ep_pcncmb  := SourceData/epdata_c/ep_pcncmb;
+		 attribute<string> ep_pcncmbnr  := SourceData/epdata_c/ep_pcncmbnr;
+		 attribute<string> ep_klaslet  := SourceData/epdata_c/ep_klaslet ;
+         attribute<string> Pand_energieklasse  := SourceData/epdata_c/Pand_energieklasse ;
+		 attribute<string> Pand_gebouwklasse := SourceData/epdata_c/Pand_gebouwklasse ;
+		 attribute<string> Pand_gebruiksoppervlakte_thermische_zone   := SourceData/epdata_c/Pand_gebruiksoppervlakte_thermische_zone ;
+      } 
+	  
+
 	}
 
 	container Make_gemfrompc4: Using = "Units"
@@ -611,9 +625,10 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 				
 			
 			attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/GW_CODE, pergemeentecatd/Values) ;
+			parameter <string> outfilename :="%ProjDir%/output/pergemeented_"+Config1/EPCVERSION+".shp" ;
 
 			unit<uint32> pergemeentecatd := unique(i_land_dbf/GW_CODE)
-		          ,    StorageName = "%ProjDir%/output/pergemeented.shp"  
+		           ,    StorageName = "=outfilename"  
 				     ,    StorageType = "gdalwrite.vect"					
             {
                 attribute<string>     GW_CODE   := string( Values);	  
