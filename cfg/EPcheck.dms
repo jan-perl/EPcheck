@@ -14,8 +14,8 @@ container EPcheck
 		parameter<bool> alleen_Ameland := False,
 		Descr= "Door deze op True te zetten, runt het model snel, en kun je debuggen
 		Zorg er bij check-in in github voor dat deze op True staat !";
-		parameter <string> BAGVERSION := "20240101";
-		parameter <string> EPCVERSION := "v20240601_v2";
+		parameter <string> BAGVERSION := "20221001";
+		parameter <string> EPCVERSION := "v20230301_v2";
 	}
 
 container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
@@ -165,6 +165,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	container Geography // Define the extend of the scene and the projection 
 	{
 		unit<fpoint> rdc_base : format = "EPSG:28992", DialogData = "wmts_layer";               // Rijksdriehoekstelsel, a 2D cartesian coordinate system for the netherlands
+//		unit<fpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "wmts_layer";               // Rijksdriehoekstelsel, a 2D cartesian coordinate system for the netherlands
 		unit<fpoint> rdc_meter      := range(rdc_base, point(0f, 300000f), point(280000f, 625000f)); // Define a 2D range consisting of 2D cartesian coordinates, later used for the "province" domain unit geometry attribute
 		unit<fpoint> rdc      := Geography/rdc_meter;
 
@@ -365,10 +366,10 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			
 			attribute<string> gempccombi (SourceData/CBS_2022/buurt) :=  iif (isnull(SourceData/CBS_2022/buurt/POSTCODE),
                    "0000",SourceData/CBS_2022/buurt/POSTCODE)+" " + SourceData/CBS_2022/buurt/GM_CODE	+" " + SourceData/CBS_2022/buurt/GM_NAAM;
-			attribute<uint32>  gpcco_rel (SourceData/CBS_2022/buurt) := rlookup(gempccombi , combicnt1/Values) ;
+			attribute<uint32>  gpcco_rel (SourceData/CBS_2022/buurt) := rlookup(gempccombi , combicnt1/Values ) ;
 			unit<uint32> combicnt1 := unique(gempccombi) 			
 			{
-			    attribute<string>   val   := string( Values);	  
+			    attribute<string>   val   := string( combicnt1/Values);	  
 				attribute<string>   pc := substr(val,0,4) ;
 				attribute<string>   GW_CODE := substr(val,5,6) ;
 				attribute<string>   gemeente := substr(val,12,9999) ;
@@ -631,7 +632,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		           ,    StorageName = "=outfilename"  
 				     ,    StorageType = "gdalwrite.vect"					
             {
-                attribute<string>     GW_CODE   := string( Values);	  
+                                attribute<string>     GW_CODE   := string( Values);	  
 				attribute<uint32>     gem_geo_idx := rlookup(GW_CODE, SourceData/CBS_2022/gemeenten/GW_CODE);
 				attribute<int32>      oppervl   := sum(i_land_dbf/vbo_opp,gem_rel) ;
 				attribute<string>     gemeente  := first(i_land_dbf/gemeente,gem_rel) ;	
@@ -639,11 +640,36 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
 				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeenten/geometry[gem_geo_idx];				  
 				
-                attribute<ratio>   R_geen    :=  dlopppct/geen;
+                                attribute<ratio>   R_geen    :=  dlopppct/geen;
 				attribute<ratio>   R_NOK    :=  dlopppct/NOK;
 				attribute<ratio>   R_OK    :=  dlopppct/OK;   
 				attribute<ratio>   R_niett    :=  dlopppct/geenNietWoon + dlopppct/Industrie + dlopppct/Klein;    
 				attribute<ratio>   R_uitz    :=  dlopppct/WelEPgeenVBO_U + dlopppct/BinnenNr + dlopppct/geenadr;	
+				
+//                                attribute<ratio>   R_all    :=  R_geen + R_NOK+ R_OK + R_niett + R_uitz;
+//                                attribute<string>  F_all  := gemeente + string(R_all)+string(oppervl+epsrcdat );
+
+				//attribute<float32>   D_geen    :=  float32( sum( iif(uint32(i_land_dbf/uitkomst) == 
+				//           uint32(const(Classifications/Uitkomstcats/V/geen, .))  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
+				//attribute<float32>   D_NOK    :=  float32( sum( iif(i_land_dbf/uitkomst == 
+				//           const(Classifications/Uitkomstcats/V/NOK, .)  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
+				//attribute<float32>   D_OK    :=  dlopppct/OK;   				
+ 
+            }
+
+                        parameter <string> outfileland := "%ProjDir%/output/landsum_"+Config1/EPCVERSION+".shp" ;
+
+			unit<uint32> perlandcatd := unique(pergemeentecatd/epsrcdat )
+		           ,    StorageName = "=outfileland"  
+				     ,    StorageType = "gdalwrite.vect"					
+            {
+                attribute<string>    code2  := string( Values);	  
+
+				attribute<int32>      oppervl   := sum(pergemeentecatd/oppervl,.) ;
+				attribute<int32>      epsrcdat 	:= first(pergemeentecatd/epsrcdat,.);	
+				  
+                                attribute<ratio>   R_geen    :=  mean(pergemeentecatd/R_geen,.);
+                                attribute<ratio>   all    :=  R_geen;
 				
 				//attribute<float32>   D_geen    :=  float32( sum( iif(uint32(i_land_dbf/uitkomst) == 
 				//           uint32(const(Classifications/Uitkomstcats/V/geen, .))  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
