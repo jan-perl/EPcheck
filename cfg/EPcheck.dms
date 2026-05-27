@@ -15,7 +15,7 @@ container EPcheck
 		Descr= "Door deze op True te zetten, runt het model snel, en kun je debuggen
 		Zorg er bij check-in in github voor dat deze op True staat !";
 		parameter <string> BAGVERSION := "20221001";
-		parameter <string> EPCVERSION := "v20230301_v2";
+		parameter <string> EPCVERSION := "v20240301_v2";
 	}
 
 container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
@@ -591,6 +591,9 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 					    eputil/oppervlakte[Select2/ep_idx_vbo] );
 		 
 		 attribute<int32> vbo_opp   := selectforlab/oppervlakte ;
+		 attribute<int32> vbo_one   := Int32(1)+Int32(0)*selectforlab/oppervlakte ;
+		 
+
 // storing geometry does not work		 , DisableStorage ="True" 
 		 attribute<Geography/rdc> vbo_geometry   := selectforlab/geometry
 		   ,    StorageName = "%ProjDir%/output/outp2landvbo.shp" ;
@@ -616,16 +619,19 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			 attribute<string> nrtoev := replace(substr(pcncmb,6,99),"-"," ");
 			 attribute<string> klaslet := union_data(., i_land_dbf/klaslet,epnovbosel/klaslet,epnoaddr/klaslet );
 			 attribute<float32> ep_opp := union_data(., i_land_dbf/ep_opp,epnovbosel/ep_opp,epnoaddr/oppervlakte );
-			 attribute<Int32> vbo_opp := union_data(., i_land_dbf/vbo_opp,epnovbosel/vbo_opp,int32(epnoaddr/oppervlakte) );			 
+			 attribute<Int32> vbo_opp := union_data(.,  i_land_dbf/vbo_opp,epnovbosel/vbo_opp,int32(epnoaddr/oppervlakte) );	
 			 attribute<Classifications/Uitkomstcats> uitkomst := union_data(., i_land_dbf/uitkomst,epnovbosel/uitkomst,epnoaddr/uitkomst ) ;
 	  }		 
+			attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/GW_CODE, pergemeentecatd/Values) ;
 			       
             container dlopppct := for_each_nedv(classifications/Uitkomstcats/name,  
 				'float32( sum( iif(uint32(i_land_dbf/uitkomst) == '+string(id(classifications/Uitkomstcats))+' , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(pergemeentecatd/oppervl) '
 				, pergemeentecatd , float32), DisableStorage ="True" ;
+			container aantobjgemcat := for_each_nedv(classifications/Uitkomstcats/name,  
+				'uint32 ( sum( iif(uint32(i_land_dbf/uitkomst) == '+string(id(classifications/Uitkomstcats))+' ,i_land_dbf/vbo_one,Int32(0)),gem_rel) ) '
+				, pergemeentecatd , uint32), DisableStorage ="True" ;
 				
 			
-			attribute<uint32>  gem_rel (i_land_dbf) := rlookup(i_land_dbf/GW_CODE, pergemeentecatd/Values) ;
 			parameter <string> outfilename :="%ProjDir%/output/pergemeented_"+Config1/EPCVERSION+".shp" ;
 
 			unit<uint32> pergemeentecatd := unique(i_land_dbf/GW_CODE)
@@ -640,7 +646,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 
 				attribute<Geography/rdc> geometry (polygon) := SourceData/CBS_2022/Gemeenten/geometry[gem_geo_idx];				  
 				
-                                attribute<ratio>   R_geen    :=  dlopppct/geen;
+                attribute<ratio>   R_geen    :=  dlopppct/geen;
 				attribute<ratio>   R_NOK    :=  dlopppct/NOK;
 				attribute<ratio>   R_OK    :=  dlopppct/OK;   
 				attribute<ratio>   R_niett    :=  dlopppct/geenNietWoon + dlopppct/Industrie + dlopppct/Klein;    
@@ -655,7 +661,12 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 				//           const(Classifications/Uitkomstcats/V/NOK, .)  , i_land_dbf/vbo_opp,Int32(0)),gem_rel) ) / float32(oppervlakte);
 				//attribute<float32>   D_OK    :=  dlopppct/OK;   				
  
-            }
+                attribute<uint32>   N_geen    :=  aantobjgemcat/geen;
+				attribute<uint32>   N_NOK    :=  aantobjgemcat/NOK;
+				attribute<uint32>   N_OK    :=  aantobjgemcat/OK;   
+				attribute<uint32>   N_niett    :=  aantobjgemcat/geenNietWoon + aantobjgemcat/Industrie + aantobjgemcat/Klein;    
+				attribute<uint32>   N_uitz    :=  aantobjgemcat/WelEPgeenVBO_U + aantobjgemcat/BinnenNr + aantobjgemcat/geenadr;	
+			}
 
                         parameter <string> outfileland := "%ProjDir%/output/landsum_"+Config1/EPCVERSION+".shp" ;
 
